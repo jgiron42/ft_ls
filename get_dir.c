@@ -19,7 +19,7 @@ status	get_stat(t_file *current, char *path, bool follow_link)
 
 status init_file(t_file *current, char *name, char *path, dir_stats *dir)
 {
-	strcpy(current->name, name);
+	ft_strcpy(current->name, name);
 	if (dir && !current->stat_error) {
 		if (config.flags['i'])
 			SWITCH_STATUS(get_inode(current, dir), , , return FATAL)

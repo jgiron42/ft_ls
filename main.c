@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	}
 	dirs.btree.multi = true; // enable multimap
 	files.set.btree.multi = true;
-	if (parse_command(&dirs, &files, argc, argv) != OK)
+	if (parse_command(&dirs, &files, argc, argv) == FATAL)
 	{
 		free(config.program_name);
 		dirs.destroy(&dirs);

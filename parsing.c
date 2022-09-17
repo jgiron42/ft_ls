@@ -1,7 +1,7 @@
 #include "ft_ls.h"
 
 #define HELP_USAGE "ft_ping [options] <destination>"
-#define OPTIONS "-:CRacdilrtuLHgnops" "q1"
+#define OPTIONS "CRacdilrtuLHgnops" "q1"
 
 static const char *options[][2] = {
 		{"-h", "print help and exit"},
@@ -10,10 +10,10 @@ static const char *options[][2] = {
 
 void	show_help()
 {
-	dprintf(2, "\nUsage:\n  %s\n\n", HELP_USAGE);
-	dprintf(2, "Options:\n");
+	ft_fprintf(ft_stderr, "\nUsage:\n  %s\n\n", HELP_USAGE);
+	ft_fprintf(ft_stderr, "Options:\n");
 	for (int i = 0; options[i][0]; i++)
-		dprintf(2, "  %-20s%s\n", options[i][0], options[i][1]);
+		ft_fprintf(ft_stderr, "  %-20s%s\n", options[i][0], options[i][1]);
 }
 
 status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
@@ -25,7 +25,7 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 	if (!config.program_name)
 		return (FATAL);
 	config.block_size = ft_posixly_correct() ? 512 : 1024; // TODO: parse env
-	while ((retgetopt = ft_getopt(argc, argv, OPTIONS)) != -1) {
+	while ((retgetopt = ft_getopt(argc, argv, "-:" OPTIONS)) != -1) {
 		switch (retgetopt) {
 			SWITCH_OPT(config.flags, 'u', 'c')
 			SWITCH_OPT(config.flags, 'H', 'L')
@@ -42,29 +42,25 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 	}
 	if (config.flags['g'] || config.flags['o'])
 		config.flags['l'] = true;
-	ft_optind = 1;
-	while ((retgetopt = ft_getopt(argc, argv, OPTIONS)) != -1) {
-		if (retgetopt == 1)
-		{
-			n++;
-			t_file current = DEFAULT_FILE;
-			container *dst = dirs;
-			SWITCH_STATUS(get_stat(&current, ft_optarg,!(config.flags['d'] || config.flags['l'] || config.flags['F']) || config.flags['H'] || config.flags['L']),,ret = KO; continue,);
-			if ((S_ISDIR(current.lstat.st_mode) && !S_ISLNK(current.real_mode)) ||
-				(S_ISDIR(current.lstat.st_mode) && S_ISLNK(current.real_mode) && (!(config.flags['d'] || config.flags['l'] || config.flags['F']) || (config.flags['H'] || config.flags['L'])))) {
-				init_file(&current, ft_optarg, ft_optarg, NULL);
-			}
-			else {
-				init_file(&current, ft_optarg, ft_optarg, files);
-				dst = &files->set;
-			}
-			if (current.stat_error)
-				continue;
-			iterator end = ft_btree_end(dst);
-			iterator inserted = ft_btree_insert_val(dst, &current);
-			if (ft_btree_iterator_compare(dst->value_type_metadata, &end, &inserted) == 0)
-				return (FATAL);
+	for (int i = ft_optind; i < argc; i++) {
+		n++;
+		t_file current = DEFAULT_FILE;
+		container *dst = dirs;
+		SWITCH_STATUS(get_stat(&current, argv[i],!(config.flags['d'] || config.flags['l'] || config.flags['F']) || config.flags['H'] || config.flags['L']),,ret = KO; continue,);
+		if ((S_ISDIR(current.lstat.st_mode) && !S_ISLNK(current.real_mode)) ||
+			(S_ISDIR(current.lstat.st_mode) && S_ISLNK(current.real_mode) && (!(config.flags['d'] || config.flags['l'] || config.flags['F']) || (config.flags['H'] || config.flags['L'])))) {
+			init_file(&current, argv[i], argv[i], NULL);
 		}
+		else {
+			init_file(&current, argv[i], argv[i], files);
+			dst = &files->set;
+		}
+		if (current.stat_error)
+			continue;
+		iterator end = ft_btree_end(dst);
+		iterator inserted = ft_btree_insert_val(dst, &current);
+		if (ft_btree_iterator_compare(dst->value_type_metadata, &end, &inserted) == 0)
+			return (FATAL);
 	}
 	if (!n)
 	{

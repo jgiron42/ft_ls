@@ -145,7 +145,7 @@ status	get_time(t_file *current)
 status	get_mode(t_file *current, dir_stats *dir, char *path)
 {
 	//ACL: TODO: '.' for security context
-	if (S_ISLNK(current->lstat.st_mode)) {
+	if (! S_ISLNK(current->lstat.st_mode)) {
 		ssize_t ret = getxattr(path, XATTR_NAME_POSIX_ACL_ACCESS, NULL, 0);
 		if (((ret < 0 && errno == ENODATA) || ret == 0) && S_ISDIR (current->lstat.st_mode))
 			ret = getxattr(path, XATTR_NAME_POSIX_ACL_DEFAULT, NULL, 0);
