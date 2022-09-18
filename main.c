@@ -1,4 +1,5 @@
 #include "ft_ls.h"
+#include <locale.h>
 
 t_config config = {};
 status	ls_arguments(container *dirs, dir_stats *files)
@@ -7,6 +8,9 @@ status	ls_arguments(container *dirs, dir_stats *files)
 	ft_string(&current_path, "");
 	status ret = OK;
 
+//	char *tmp = ft_getenv("LC_COLLATE");
+//	if (tmp)
+//		setlocale(LC_COLLATE, tmp);
 	//files
 	if (files->set.size > 0)
 		for_in(it, files->set)

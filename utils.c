@@ -27,9 +27,11 @@ int	t_file_compare(type_metadata prop, void *l, void *r)
 		else
 			ret = compare_time((*(t_file **)r)->lstat.st_mtim, (*(t_file **)l)->lstat.st_mtim);
 		if (!ret)
+//			 ret = strcoll((*(t_file **)l)->name, (*(t_file **)r)->name);
 			 ret = ft_strcmp((*(t_file **)l)->name, (*(t_file **)r)->name);
 	}
 	else
+//		ret = strcoll((*(t_file **)l)->name, (*(t_file **)r)->name);
 		ret = ft_strcmp((*(t_file **)l)->name, (*(t_file **)r)->name);
 	if (config.flags['r'])
 		ret *= -1;
