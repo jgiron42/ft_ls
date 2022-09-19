@@ -75,10 +75,11 @@ status get_dir(container *dirname, dir_stats *dir)
 		if (elem->d_type == DT_UNKNOWN)
 		{
 			if (lstat(ft_string_c_str(dirname), &current.lstat) == -1) {
-				my_perror("lstat");
-				current.name[0] = '\0';
-				closedir(dirp);
-				return KO;
+//				ft_fprintf(ft_stderr, "%s: cannot access '%s': %m\n", config.program_name, ft_string_c_str(dirname));
+//				current.stat_error = true;
+//				current.name[0] = '\0';
+//				closedir(dirp);
+//				return KO;
 			}
 		}
 		get_stat(&current, ft_string_c_str(dirname), config.flags['L']);
