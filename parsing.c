@@ -1,20 +1,6 @@
 #include "ft_ls.h"
 
-#define HELP_USAGE "ft_ping [options] <destination>"
-#define OPTIONS "CRacdilrtuLHgnops" "q1"
-
-static const char *options[][2] = {
-		{"-h", "print help and exit"},
-		{NULL, NULL}
-};
-
-void	show_help()
-{
-	ft_fprintf(ft_stderr, "\nUsage:\n  %s\n\n", HELP_USAGE);
-	ft_fprintf(ft_stderr, "Options:\n");
-	for (int i = 0; options[i][0]; i++)
-		ft_fprintf(ft_stderr, "  %-20s%s\n", options[i][0], options[i][1]);
-}
+#define OPTIONS "RacdilrtuHgnops" //"LCq1"
 
 status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 	int retgetopt;
@@ -24,7 +10,7 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 	config.program_name = ft_strdup(argv[0]);
 	if (!config.program_name)
 		return (FATAL);
-	config.block_size = ft_posixly_correct() ? 512 : 1024; // TODO: parse env
+	config.block_size = ft_posixly_correct() ? 512 : 1024;
 	while ((retgetopt = ft_getopt(argc, argv, "-:" OPTIONS)) != -1) {
 		switch (retgetopt) {
 			SWITCH_OPT(config.flags, 'u', 'c')
@@ -47,8 +33,8 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 		t_file current = DEFAULT_FILE;
 		container *dst = dirs;
 		SWITCH_STATUS(get_stat(&current, argv[i],!(config.flags['d'] || config.flags['l'] || config.flags['F']) || config.flags['H'] || config.flags['L']),,ret = KO; continue,);
-		if ((S_ISDIR(current.lstat.st_mode) && !S_ISLNK(current.real_mode)) ||
-			(S_ISDIR(current.lstat.st_mode) && S_ISLNK(current.real_mode) && (!(config.flags['d'] || config.flags['l'] || config.flags['F']) || (config.flags['H'] || config.flags['L'])))) {
+		if (!config.flags['d'] && ((S_ISDIR(current.lstat.st_mode) && !S_ISLNK(current.real_mode)) ||
+			(S_ISDIR(current.lstat.st_mode) && S_ISLNK(current.real_mode) && (!(config.flags['d'] || config.flags['l'] || config.flags['F']) || (config.flags['H'] || config.flags['L']))))) {
 			init_file(&current, argv[i], argv[i], NULL);
 		}
 		else {
@@ -75,6 +61,5 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 	config.multiple = dirs->size + files->set.size > 1;
 	return (ret);
 	error:
-	show_help();
 	return (KO);
 }
