@@ -16,7 +16,7 @@ LIB_ARG = $(foreach path, $(LIBS), -L $(dir $(path)) -l $(notdir $(path)))
 
 OBJS := $(SRCS:%.c=%.o)
 
-CFLAGS = -Wall -Werror -Wextra -g3
+CFLAGS = -Wall -Werror -Wextra -g3 #-D VECTOR_STORAGE
 
 CC = cc
 

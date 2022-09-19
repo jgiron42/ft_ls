@@ -11,6 +11,7 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 	if (!config.program_name)
 		return (FATAL);
 	config.block_size = ft_posixly_correct() ? 512 : 1024;
+	// parse options:
 	while ((retgetopt = ft_getopt(argc, argv, "-:" OPTIONS)) != -1) {
 		switch (retgetopt) {
 			SWITCH_OPT(config.flags, 'u', 'c')
@@ -28,6 +29,8 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 	}
 	if (config.flags['g'] || config.flags['o'])
 		config.flags['l'] = true;
+
+	// parse arguments:
 	for (int i = ft_optind; i < argc; i++) {
 		n++;
 		t_file current = DEFAULT_FILE;
@@ -44,20 +47,23 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 		if (current.stat_error)
 			continue;
 		iterator end = ft_btree_end(dst);
-		iterator inserted = ft_btree_insert_val(dst, &current);
+		iterator inserted = ft_btree_insert_ptr(dst, &current);
 		if (ft_btree_iterator_compare(dst->value_type_metadata, &end, &inserted) == 0)
 			return (FATAL);
 	}
+
+	// no arguments? add the current directory
 	if (!n)
 	{
 		t_file current;
 		get_stat(&current, ".", config.flags['L']);
 		init_file(&current, ".", ".", NULL);
 		iterator end = ft_btree_end(dirs);
-		iterator inserted = ft_btree_insert_val(dirs, &current);
+		iterator inserted = ft_btree_insert_ptr(dirs, &current);
 		if (ft_btree_iterator_compare(dirs->value_type_metadata, &end, &inserted) == 0)
 			return (FATAL);
 	}
+
 	config.multiple = dirs->size + files->set.size > 1;
 	return (ret);
 	error:

@@ -52,18 +52,45 @@ status	ft_ls_file(t_file f, dir_stats *d, container *current_path)
 	return OK;
 }
 
-status	ls_all_dir(container *current_path, container *set)
+status ls_all_dir(container *current_path, container *set, container *vectors, size_t depth)
 {
 	status ret = OK;
 
+	dir_stats tmp = DEFAULT_DIR;
+	if (vectors->size <= depth) // create dir_stat
+	{
+#ifdef VECTOR_STORAGE
+		if (ft_vector(ATOMIC_TYPE, &tmp.set) != OK)
+			return FATAL;
+		tmp.set.vector.align = sizeof (t_file);
+		tmp.set.value_type_metadata.size = sizeof (t_file);
+		if (ft_bheap(ATOMIC_TYPE, &tmp.tmp_set) != OK)
+			return FATAL;
+		tmp.tmp_set.value_type_metadata.size = sizeof (t_file);
+		tmp.tmp_set.vector.align = sizeof (t_file);
+		tmp.tmp_set.value_type_metadata.compare = &t_file_compare;
+#elif defined(BHEAP_STORAGE)
+		if (ft_bheap(T_FILE_METATYPE, &tmp.set) != OK)
+			return FATAL;
+		if (ft_bheap(T_FILE_METATYPE, &tmp.tmp_set) != OK)
+			return FATAL;
+#else // BTREE_STORAGE
+		if (ft_btree(T_FILE_METATYPE, &tmp.set) != OK)
+			return FATAL;
+		tmp.set.btree.multi = true;
+#endif
+		printf("coucou\n");
+		if (ft_vector_push_back(vectors, &tmp) != OK)
+			return FATAL;
+	}
 	for_in(it, *set)
 	{
-		t_file *f = it.metadata.dereference(&it);
-		dir_stats current_dir = DEFAULT_DIR;
+		t_file *f = (t_file *)it.metadata.reference(&it);
 
 		if (*ft_string_c_str(current_path) && (!ft_strcmp(f->name, "..") || !ft_strcmp(f->name, ".")))
 			continue;
 		if (S_ISDIR(f->lstat.st_mode)) {
+			dir_stats *current_dir = ft_vector_at(vectors, depth);
 			if (f->name[0] == '/')
 				ft_string_clear(current_path);
 			path_push(current_path, f->name);
@@ -71,34 +98,56 @@ status	ls_all_dir(container *current_path, container *set)
 			{
 				char *link = getlink(ft_string_c_str(current_path));
 				if (!link)
-				{
-					path_pop(current_path);
-					continue;
-				}
+					goto end_dir;
 				if (!ft_strncmp(link, ft_string_c_str(current_path), ft_strlen(link)))
 				{
 					ft_fprintf(ft_stderr, "%s: %s: not listing already-listed directory\n", config.program_name, ft_string_c_str(current_path));
-					path_pop(current_path);
-					continue;
+					goto end_dir;
 				}
 			}
-			SWITCH_STATUS(get_dir(current_path, &current_dir),, { path_pop(current_path); continue; }, { return FATAL; })
-			SWITCH_STATUS(ft_ls_dir(current_path, &current_dir),, { ret = KO; }, { current_dir.set.destroy(&current_dir.set); return FATAL; })
-			current_dir.set.destroy(&current_dir.set);
-			path_pop(current_path);
+			SWITCH_STATUS(get_dir(current_path, current_dir),, { path_pop(current_path); continue; }, { return FATAL; })
+			SWITCH_STATUS(ft_ls_dir(current_path, current_dir, vectors, depth),, { ret = KO; }, { return FATAL; })
+			end_dir:
+			if (f->name[0] == '/')
+				ft_string_clear(current_path);
+			else
+				path_pop(current_path);
+			// reset dir_stat:
+			tmp.set = ((dir_stats *)ft_vector_at(vectors, depth))->set;
+			tmp.set.clear(&tmp.set);
+			tmp.tmp_set = ((dir_stats *)ft_vector_at(vectors, depth))->tmp_set;
+			tmp.tmp_set.clear(&tmp.tmp_set);
+			*((dir_stats *)ft_vector_at(vectors, depth)) = tmp;
 		}
 	}
 	return ret;
 }
 
-status	ft_ls_dir(container *current_path, dir_stats *dir)
+status	ft_ls_dir(container *current_path, dir_stats *dir, container *vectors, size_t depth)
 {
 	status ret = OK;
 	if (config.flags['l'] || config.flags['s'])
 		ft_printf("total %lu\n", dir->total_blocks);
+#ifdef BHEAP_STORAGE
+	while (dir->set.size > 0)
+	{
+		ft_ls_file(*((t_file*)ft_bheap_top(&dir->set)), dir, current_path);
+
+		ft_bheap_pop(&dir->set);
+	}
+#elif defined(VECTOR_STORAGE)
+//printf("cousdcoasudfsdoufsaduofa\n");
+	for_in(it, dir->set)
+	{
+//		printf(">>>> %s\n", ((t_file*)ft_vector_iterator_reference(&it))->name);
+		ft_ls_file(*(t_file*)ft_vector_iterator_reference(&it), dir, current_path);
+	}
+
+#else
 	for_in(it, dir->set)
 		ft_ls_file(*(t_file*)it.metadata.dereference(&it), dir, current_path);
+#endif
 	if (config.flags['R'])
-		SWITCH_STATUS(ls_all_dir(current_path, &dir->set), , ret = KO, return FATAL);
+		SWITCH_STATUS(ls_all_dir(current_path, &dir->set, vectors, depth + 1), , ret = KO, return FATAL);
 	return ret;
 }

@@ -2,6 +2,7 @@
 # define FT_LS
 # include "libft/libft.h"
 # include "libft/containers/containers.h"
+# include "libft/algorithms//algorithms.h"
 # include "libft/stdio/printf/printf.h"
 # include <sys/sysmacros.h>
 # include <stdbool.h>
@@ -19,6 +20,7 @@
 # define DEFAULT_FILE (t_file){.blocks = "?",.inode = "?",.mode= "l?????????",.nlink = "?",.uid = "?",.gid = "?",.reg = {.size = "?"},.time = "?"}
 # define DEFAULT_DIR (dir_stats){.blocks = 1, .inode = 1,.mode=10,.nlink=1,.uid = 1,.gid=1,.size = 1,}
 # define SWITCH_OPT(var, opt1, opt2) case opt1: var[opt1] = true; var[opt2] = false; break; case opt2: var[opt2] = true; var[opt1] = false; break;
+#define VECTOR_STORAGE
 typedef struct {
 	char	*program_name;
 	bool	flags[UCHAR_MAX + 1];
@@ -57,6 +59,7 @@ typedef struct {
 
 typedef struct {
 	container	set;
+	container	tmp_set;
 	size_t		total_blocks;
 	// padding values:
 	int			blocks;
@@ -74,9 +77,9 @@ extern	t_config config;
 
 status	parse_command(container *dirs, dir_stats *files, int argc, char **argv);
 status	ft_ls_file(t_file f, dir_stats *d, container *current_path);
-status	ls_all_dir(container *current_path, container *set);
+status ls_all_dir(container *current_path, container *set, container *vectors, size_t depth);
 status	ft_ls(t_file file);
-status	ft_ls_dir(container *current_path, dir_stats *dir);
+status	ft_ls_dir(container *current_path, dir_stats *dir, container *vectors, size_t depth);
 void	my_perror(char *prefix);
 int		t_file_compare(type_metadata prop, void *l, void *r);
 status init_file(t_file *current, char *name, char *path, dir_stats *dir);

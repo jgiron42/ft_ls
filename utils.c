@@ -19,20 +19,22 @@ int	t_file_compare(type_metadata prop, void *l, void *r)
 {
 	(void)prop;
 	long int	ret;
+//	printf("===> %p\n", r);
+//	printf("===> %s %zu\n", ((t_file *)r)->name, ((t_file *)r)->lstat.st_size);
 	if (config.flags['t'] || ((config.flags['c'] || config.flags['u']) && !(config.flags['l']))) {
 		if (config.flags['c'])
-			ret = compare_time((*(t_file **)r)->lstat.st_ctim, (*(t_file **)l)->lstat.st_ctim);
+			ret = compare_time(((t_file *)r)->lstat.st_ctim, ((t_file *)l)->lstat.st_ctim);
 		else if (config.flags['u'])
-			ret = compare_time((*(t_file **)r)->lstat.st_atim, (*(t_file **)l)->lstat.st_atim);
+			ret = compare_time(((t_file *)r)->lstat.st_atim, ((t_file *)l)->lstat.st_atim);
 		else
-			ret = compare_time((*(t_file **)r)->lstat.st_mtim, (*(t_file **)l)->lstat.st_mtim);
+			ret = compare_time(((t_file *)r)->lstat.st_mtim, ((t_file *)l)->lstat.st_mtim);
 		if (!ret)
 //			 ret = strcoll((*(t_file **)l)->name, (*(t_file **)r)->name);
-			 ret = ft_strcmp((*(t_file **)l)->name, (*(t_file **)r)->name);
+			 ret = ft_strcmp(((t_file *)l)->name, ((t_file *)r)->name);
 	}
 	else
 //		ret = strcoll((*(t_file **)l)->name, (*(t_file **)r)->name);
-		ret = ft_strcmp((*(t_file **)l)->name, (*(t_file **)r)->name);
+		ret = ft_strcmp(((t_file *)l)->name, ((t_file *)r)->name);
 	if (config.flags['r'])
 		ret *= -1;
 	return ret < 0 ? -1 : ret > 0 ? 1 : 0;
