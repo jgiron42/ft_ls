@@ -32,10 +32,10 @@ $(MAKE_DEP):
 	make -C $(dir $@) $(notdir $@)
 
 clean:
-	rm $(OBJS)
+	rm -f $(OBJS)
 
 fclean: clean
-	rm $(NAME)
+	rm -f $(NAME)
 
 re: fclean all
 
