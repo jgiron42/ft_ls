@@ -1,17 +1,19 @@
 #include "ft_ls.h"
 
-#define OPTIONS "RacdilrtuHgnopsU" //"LCq1"
+#define OPTIONS "RacdilrtuHgnopsf" //"ULCq1"
 
 status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 	int retgetopt;
 	status ret = OK;
 	int n = 0;
 
-	config.program_name = ft_strdup(argv[0]);
+	config.program_name = argv[0];
+	ft_bzero(config.flags, sizeof(config.flags));
 	if (!config.program_name)
 		return (FATAL);
 	config.current_time = time(NULL);
 	config.block_size = ft_posixly_correct() ? 512 : 1024;
+
 	// parse options:
 	while ((retgetopt = ft_getopt(argc, argv, "-:" OPTIONS)) != -1) {
 		switch (retgetopt) {
@@ -23,14 +25,23 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 			case '?':
 				ft_fprintf(ft_stderr, "%s: invalid option -- '%c'\n", config.program_name, ft_optopt);
 				goto error;
+			case 'f':
+				config.flags['a'] = true;
+				config.flags['f'] = true;
+				config.flags['l'] = false;
+				config.flags['t'] = false;
+				config.flags['r'] = false;
+				config.flags['s'] = false;
+				break;
 			default:
 				config.flags[retgetopt] = true;
 				break;
 		}
+		if (ft_strchr("tuc", retgetopt))
+			config.flags['f'] = false;
+		if (ft_strchr("gon", retgetopt))
+			config.flags['l'] = true;
 	}
-	if (config.flags['g'] || config.flags['o'] || config.flags['n'])
-		config.flags['l'] = true;
-
 	config.gather_stat = config.flags['l'] || config.flags['c'] || config.flags['t'] || config.flags['u'] || config.flags['s'];
 
 	// parse arguments:
@@ -49,11 +60,13 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 		}
 		if (current.stat_error)
 			continue;
-		iterator end = ft_btree_end(dst);
-		iterator inserted = ft_btree_insert_val(dst, &current);
-		if (ft_btree_iterator_compare(dst->value_type_metadata, &end, &inserted) == 0)
+		if (ft_push_back(dst, &current) != OK)
 			return (FATAL);
 	}
+
+	// sort:
+	if (!config.flags['f'] && (heap_sort(dirs) != OK || heap_sort(&files->set)))
+		return FATAL;
 
 	// no arguments? add the current directory
 	if (!n)
@@ -61,9 +74,7 @@ status	parse_command(container *dirs, dir_stats *files, int argc, char **argv) {
 		t_file current;
 		get_stat(&current, ".", config.flags['L']);
 		init_file(&current, ".", ".", NULL);
-		iterator end = ft_btree_end(dirs);
-		iterator inserted = ft_btree_insert_val(dirs, &current);
-		if (ft_btree_iterator_compare(dirs->value_type_metadata, &end, &inserted) == 0)
+		if (ft_push_back(dirs, &current) != OK)
 			return (FATAL);
 	}
 

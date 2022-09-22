@@ -81,7 +81,7 @@ status ls_all_dir(container *current_path, container *set, container *vectors, s
 			if (f->name[0] == '/')
 				ft_string_clear(current_path);
 			path_push(current_path, f->name);
-			if(S_ISLNK(f->real_mode) && config.flags['L'])
+			if(S_ISLNK(f->lstat.st_mode) && config.flags['L'])
 			{
 				char *link = getlink(ft_string_c_str(current_path));
 				if (!link)

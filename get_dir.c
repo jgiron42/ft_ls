@@ -14,36 +14,44 @@ status	get_stat(t_file *current, char *path, bool follow_link)
 		current->stat_error = true;
 		ft_fprintf(ft_stderr, "%s: cannot access '%s': %m\n", config.program_name, path);
 	}
-	current->is_dir = S_ISDIR(current->real_mode);
+	current->is_dir = S_ISDIR(current->lstat.st_mode);
 	return OK;
 }
 
 status init_file(t_file *current, char *name, char *path, dir_stats *dir)
 {
 	ft_strcpy(current->name, name);
-	if (dir && !current->stat_error) {
-		if (config.flags['i'])
-			SWITCH_STATUS(get_inode(current, dir), , , return FATAL)
-		if (config.flags['s'])
-			SWITCH_STATUS(get_blocks(current, dir), , , return FATAL)
-		if (config.flags['p'] || config.flags['F'])
+	if (dir) {
+		if (!current->stat_error) {
+			if (config.flags['i'])
+				SWITCH_STATUS(get_inode(current, dir), , , return FATAL)
+			if (config.flags['s'])
+				SWITCH_STATUS(get_blocks(current, dir), , , return FATAL)
+			if (config.flags['p'] || config.flags['F']) {
+				if (config.flags['l'])
+					SWITCH_STATUS(get_Fchar(&current->Fchar, current->lstat.st_mode), , , return FATAL)
+				else
+					SWITCH_STATUS(get_Fchar(&current->Fchar, current->real_mode), , , return FATAL)
+			}
+			if (config.flags['l']) {
+				SWITCH_STATUS(get_mode(current, dir, path), , , return FATAL)
+				SWITCH_STATUS(get_nlink(current, dir), , , return FATAL);
+				if (!config.flags['g'])
+					SWITCH_STATUS(get_uid(current, dir), , , return FATAL)
+				if (!config.flags['o'])
+					SWITCH_STATUS(get_gid(current, dir), , , return FATAL)
+				SWITCH_STATUS(get_size(current, dir), , , return FATAL)
+				SWITCH_STATUS(get_time(current), , , return FATAL)
+			}
+			dir->total_blocks += current->lstat.st_blocks;
+		}
+		else
 		{
 			if (config.flags['l'])
-				SWITCH_STATUS(get_Fchar(&current->Fchar, current->lstat.st_mode), , , return FATAL)
-			else
-				SWITCH_STATUS(get_Fchar(&current->Fchar, current->real_mode), , , return FATAL)
+				SWITCH_STATUS(get_mode(current, dir, path), , , return FATAL)
+			if (config.flags['p'] && current->is_dir)
+				current->Fchar = '/';
 		}
-		if (config.flags['l']) {
-			SWITCH_STATUS(get_mode(current, dir, path), , , return FATAL)
-			SWITCH_STATUS(get_nlink(current, dir), , , return FATAL);
-			if (!config.flags['g'])
-				SWITCH_STATUS(get_uid(current, dir), , , return FATAL)
-			if (!config.flags['o'])
-				SWITCH_STATUS(get_gid(current, dir), , , return FATAL)
-			SWITCH_STATUS(get_size(current, dir), , , return FATAL)
-			SWITCH_STATUS(get_time(current), , , return FATAL)
-		}
-		dir->total_blocks += current->lstat.st_blocks;
 	}
 	return OK;
 }
@@ -78,6 +86,7 @@ status get_dir(container *dirname, dir_stats *dir)
 			}
 		}
 		current.is_dir = (elem->d_type == DT_DIR);
+		current.d_type = elem->d_type;
 		if (config.gather_stat)
 			get_stat(&current, ft_string_c_str(dirname), config.flags['L']);
 		else
@@ -86,8 +95,8 @@ status get_dir(container *dirname, dir_stats *dir)
 		path_pop(dirname);
 #ifdef VECTOR_STORAGE
 //		printf("---> %s %zu\n", current.name, current.lstat.st_size);
-		if ((!config.flags['U'] && ft_bheap_push(&dir->tmp_set, &current) != OK) ||
-			( config.flags['U'] && ft_vector_push_back(&dir->set, &current) != OK))
+		if ((!config.flags['f'] && ft_bheap_push(&dir->tmp_set, &current) != OK) ||
+			( config.flags['f'] && ft_vector_push_back(&dir->set, &current) != OK))
 #else
 		if (ft_push_back(&dir->set, &current) != OK)
 #endif
@@ -105,7 +114,7 @@ status get_dir(container *dirname, dir_stats *dir)
 		return OK; // a voir
 	}
 #ifdef VECTOR_STORAGE
-	while (!config.flags['U'] && dir->tmp_set.size > 0)
+	while (!config.flags['f'] && dir->tmp_set.size > 0)
 	{
 		if (ft_vector_push_back(&dir->set, ft_vector_at(&dir->tmp_set, 0)) != OK)
 			return FATAL;

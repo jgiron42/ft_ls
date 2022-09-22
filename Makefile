@@ -16,7 +16,7 @@ LIB_ARG = $(foreach path, $(LIBS), -L $(dir $(path)) -l $(notdir $(path)))
 
 OBJS := $(SRCS:%.c=%.o)
 
-CFLAGS = -Wall -Werror -Wextra -g3 -D VECTOR_STORAGE #-D USE_LOCALES
+CFLAGS = -Wall -Werror -Wextra -g3 -D VECTOR_STORAGE -fsanitize=undefined #-D USE_LOCALES
 
 CC = cc
 
@@ -30,6 +30,9 @@ $(NAME): $(OBJS) $(MAKE_DEP)
 
 $(MAKE_DEP):
 	make -C $(dir $@) $(notdir $@)
+
+malloc_test: $(OBJS) $(MAKE_DEP)
+	        $(CC) $(CFLAGS) -fsanitize=undefined -rdynamic -o $@ ${OBJS} ${LIB_ARG} -L. -lmallocator
 
 clean:
 	rm -f $(OBJS)

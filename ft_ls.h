@@ -40,7 +40,9 @@ typedef struct {
 	mode_t			real_mode;
 	char			name[NAME_MAX + 1];
 	bool			is_dir : 1;
-	ino_t			ino;
+	unsigned char	d_type; // from dirent
+	ino_t			ino; // from dirent
+
 
 	char	blocks[20];
 	char	inode[20];

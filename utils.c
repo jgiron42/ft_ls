@@ -13,9 +13,7 @@ int compare_time(struct timespec l, struct timespec r)
 int id_table_entry_compare(type_metadata prop, void *l, void *r)
 {
 	(void)prop;
-	id_table_entry *el = (*(id_table_entry **)l);
-	id_table_entry *er = (*(id_table_entry **)r);
-	return ((int)el->id - (int)er->id);
+	return ((int)(*(id_table_entry **)l)->id - (int)(*(id_table_entry **)r)->id);
 }
 
 int	t_file_compare(type_metadata prop, void *l, void *r)
@@ -25,7 +23,7 @@ int	t_file_compare(type_metadata prop, void *l, void *r)
 	t_file		*fr = (*(t_file **)r);
 	t_file		*fl = (*(t_file **)l);
 
-	if (config.flags['t'] || ((config.flags['c'] || config.flags['u']) && !(config.flags['l']))) {
+	if ((config.flags['t'] || ((config.flags['c'] || config.flags['u']) && !(config.flags['l'])))) {
 		if (config.flags['c'])
 			ret = compare_time(fr->lstat.st_ctim, fl->lstat.st_ctim);
 		else if (config.flags['u'])
