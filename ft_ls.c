@@ -60,36 +60,23 @@ status ls_all_dir(container *current_path, container *set, container *vectors, s
 	if (vectors->size <= depth) // create dir_stat
 	{
 #ifdef VECTOR_STORAGE
-		if (ft_vector(ATOMIC_TYPE, &tmp.set) != OK)
+		if (ft_vector(T_FILE_METADATA, &tmp.set) != OK)
 			return FATAL;
-		tmp.set.vector.align = sizeof (t_file);
-		tmp.set.value_type_metadata.size = sizeof (t_file);
-		if (ft_bheap(ATOMIC_TYPE, &tmp.tmp_set) != OK)
+		if (ft_bheap(T_FILE_METADATA, &tmp.tmp_set) != OK)
 			return FATAL;
-		tmp.tmp_set.value_type_metadata.size = sizeof (t_file);
-		tmp.tmp_set.vector.align = sizeof (t_file);
-		tmp.tmp_set.value_type_metadata.compare = &t_file_compare;
-#elif defined(BHEAP_STORAGE)
-		if (ft_bheap(T_FILE_METATYPE, &tmp.set) != OK)
+#else
+		if (ft_btree(T_FILE_METADATA, &tmp.set) != OK)
 			return FATAL;
-		if (ft_bheap(T_FILE_METATYPE, &tmp.tmp_set) != OK)
-			return FATAL;
-#else // BTREE_STORAGE
-		if (ft_btree(T_FILE_METATYPE, &tmp.set) != OK)
-			return FATAL;
-		tmp.set.btree.multi = true;
 #endif
-		printf("coucou\n");
 		if (ft_vector_push_back(vectors, &tmp) != OK)
 			return FATAL;
 	}
 	for_in(it, *set)
 	{
-		t_file *f = (t_file *)it.metadata.reference(&it);
-
+		t_file *f = (t_file *)it.metadata.dereference(&it);
 		if (*ft_string_c_str(current_path) && (!ft_strcmp(f->name, "..") || !ft_strcmp(f->name, ".")))
 			continue;
-		if (S_ISDIR(f->lstat.st_mode)) {
+		if (f->is_dir) {
 			dir_stats *current_dir = ft_vector_at(vectors, depth);
 			if (f->name[0] == '/')
 				ft_string_clear(current_path);
@@ -113,10 +100,13 @@ status ls_all_dir(container *current_path, container *set, container *vectors, s
 			else
 				path_pop(current_path);
 			// reset dir_stat:
+			tmp = DEFAULT_DIR;
 			tmp.set = ((dir_stats *)ft_vector_at(vectors, depth))->set;
 			tmp.set.clear(&tmp.set);
+#ifdef VECTOR_STORAGE
 			tmp.tmp_set = ((dir_stats *)ft_vector_at(vectors, depth))->tmp_set;
 			tmp.tmp_set.clear(&tmp.tmp_set);
+#endif
 			*((dir_stats *)ft_vector_at(vectors, depth)) = tmp;
 		}
 	}
@@ -140,7 +130,7 @@ status	ft_ls_dir(container *current_path, dir_stats *dir, container *vectors, si
 	for_in(it, dir->set)
 	{
 //		printf(">>>> %s\n", ((t_file*)ft_vector_iterator_reference(&it))->name);
-		ft_ls_file(*(t_file*)ft_vector_iterator_reference(&it), dir, current_path);
+		ft_ls_file(*(t_file*)ft_vector_iterator_dereference(&it), dir, current_path);
 	}
 
 #else

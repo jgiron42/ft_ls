@@ -27,42 +27,79 @@ status	get_size(t_file *current, dir_stats *dir)
 	return OK;
 }
 
+status get_id_cache(size_t id,  int access_type, char *dst, int *len, bool *is_num)
+{
+	static container table[2] = {{}, {}};
+	static int init = 0;
+	errno = 0;
+	if (access_type == DESTROY_ID_TABLE)
+	{
+		if (!init)
+			return OK;
+		table[0].destroy(table);
+		table[1].destroy(table + 1);
+		table[0] = (container){};
+		table[1] = (container){};
+		init = 0;
+		return OK;
+	}
+	if (!init)
+	{
+		if (ft_btree(POINTER_TYPE(id_table_entry), table) != OK)
+			return FATAL;
+		table->value_type_metadata.compare = &id_table_entry_compare;
+		if (ft_btree(POINTER_TYPE(id_table_entry), table + 1) != OK)
+			return FATAL;
+		table[1].value_type_metadata.compare = &id_table_entry_compare;
+		init = 1;
+	}
+	container *current_table = table + access_type;
+	iterator it = current_table->metadata.container.associative.insert(current_table, (id_table_entry[1]){{.id = (size_t)id, .len = -1}});
+	if (!it.metadata.compare(it.metadata, &it, (iterator[1]){current_table->metadata.container.end(current_table)}))
+		return FATAL;
+	id_table_entry *ptr = ft_btree_iterator_dereference(&it);
+	if (ptr->len == -1) {
+		char *tmp = NULL;
+		if (access_type == GET_GID && !config.flags['n']) {
+			register struct group *grp = getgrgid(id);
+			if (grp)
+				tmp = grp->gr_name;
+		} else if (access_type == GET_UID && !config.flags['n']) {
+			register struct passwd *pwd = getpwuid(id);
+			if (pwd)
+				tmp = pwd->pw_name;
+		}
+		if (tmp) {
+			ft_strcpy(ptr->s, tmp);
+			ptr->len = (int) ft_strlen(tmp);
+			ptr->is_num = false;
+		} else {
+			ptr->len = ft_sprintf(ptr->s, "%zu", id);
+			ptr->is_num = true;
+		}
+	}
+	ft_strcpy(dst, ptr->s);
+	*len = ptr->len;
+	*is_num = ptr->is_num;
+	return OK;
+}
+
 status	get_uid(t_file *current, dir_stats *dir)
 {
-	register int tmp;
-	register struct passwd *pwd;
-	if (!config.flags['n'] && (pwd = getpwuid(current->lstat.st_uid)))
-	{
-		ft_strcpy(current->uid, pwd->pw_name);
-		tmp = (int)ft_strlen(pwd->pw_name);
-	}
-	else
-	{
-		tmp = ft_sprintf(current->uid, "%u", current->lstat.st_uid);
-		current->uid_is_int = true;
-	}
+	int tmp;
+	int ret = get_id_cache(current->lstat.st_uid, GET_UID, current->uid, &tmp, &current->uid_is_int);
 	if (tmp > dir->uid)
 		dir->uid = tmp;
-	return OK;
+	return ret;
 }
 
 status	get_gid(t_file *current, dir_stats *dir)
 {
-	register int tmp;
-	register struct group *grp;
-	if (!config.flags['n'] && (grp = getgrgid(current->lstat.st_gid)))
-	{
-		ft_strcpy(current->gid, grp->gr_name);
-		tmp = (int)ft_strlen(grp->gr_name);
-	}
-	else
-	{
-		tmp = ft_sprintf(current->gid, "%u", current->lstat.st_gid);
-		current->gid_is_int = true;
-	}
+	int tmp;
+	int ret = get_id_cache(current->lstat.st_gid, GET_GID, current->gid, &tmp, &current->gid_is_int);
 	if (tmp > dir->gid)
 		dir->gid = tmp;
-	return OK;
+	return ret;
 }
 
 status	get_nlink(t_file *current, dir_stats *dir)
@@ -114,6 +151,8 @@ status	get_time(t_file *current)
 	else
 		t = current->lstat.st_mtime;
 	timestr = ctime(&t);
+	if (config.current_time > t)
+		config.current_time = time(NULL);
 	current->time[0] = timestr[4];
 	current->time[1] = timestr[5];
 	current->time[2] = timestr[6];
@@ -121,7 +160,7 @@ status	get_time(t_file *current)
 	current->time[4] = timestr[8];
 	current->time[5] = timestr[9];
 	current->time[6] = ' ';
-	if (time(NULL) - t < 31556952 / 2) // value for a year stolen from https://github.com/wertarbyte/coreutils/blob/master/src/ls.c
+	if (config.current_time - t < 31556952 / 2) // value for a year stolen from https://github.com/wertarbyte/coreutils/blob/master/src/ls.c
 	{
 		current->time[7] = timestr[11];
 		current->time[8] = timestr[12];

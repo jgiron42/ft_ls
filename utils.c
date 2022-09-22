@@ -1,10 +1,5 @@
 #include "ft_ls.h"
 
-void	my_perror(char *prefix)
-{
-	ft_fprintf(ft_stderr, "%s: %s: %m\n", config.program_name, prefix);
-}
-
 int compare_time(struct timespec l, struct timespec r)
 {
 	long int ret;
@@ -15,27 +10,55 @@ int compare_time(struct timespec l, struct timespec r)
 	return ret < 0 ? -1 : ret > 0 ? 1 : 0;
 }
 
+int id_table_entry_compare(type_metadata prop, void *l, void *r)
+{
+	(void)prop;
+	id_table_entry *el = (*(id_table_entry **)l);
+	id_table_entry *er = (*(id_table_entry **)r);
+	return ((int)el->id - (int)er->id);
+}
+
 int	t_file_compare(type_metadata prop, void *l, void *r)
 {
 	(void)prop;
 	long int	ret;
-//	printf("===> %p\n", r);
-//	printf("===> %s %zu\n", ((t_file *)r)->name, ((t_file *)r)->lstat.st_size);
+	t_file		*fr = (*(t_file **)r);
+	t_file		*fl = (*(t_file **)l);
+
 	if (config.flags['t'] || ((config.flags['c'] || config.flags['u']) && !(config.flags['l']))) {
 		if (config.flags['c'])
-			ret = compare_time(((t_file *)r)->lstat.st_ctim, ((t_file *)l)->lstat.st_ctim);
+			ret = compare_time(fr->lstat.st_ctim, fl->lstat.st_ctim);
 		else if (config.flags['u'])
-			ret = compare_time(((t_file *)r)->lstat.st_atim, ((t_file *)l)->lstat.st_atim);
+			ret = compare_time(fr->lstat.st_atim, fl->lstat.st_atim);
 		else
-			ret = compare_time(((t_file *)r)->lstat.st_mtim, ((t_file *)l)->lstat.st_mtim);
+			ret = compare_time(fr->lstat.st_mtim, fl->lstat.st_mtim);
 		if (!ret)
-//			 ret = strcoll((*(t_file **)l)->name, (*(t_file **)r)->name);
-			 ret = ft_strcmp(((t_file *)l)->name, ((t_file *)r)->name);
+#ifdef USE_LOCALES
+			 ret = strcoll(fl->name, fr->name);
+#else
+			 ret = ft_strcmp(fl->name, fr->name);
+#endif
 	}
 	else
-//		ret = strcoll((*(t_file **)l)->name, (*(t_file **)r)->name);
-		ret = ft_strcmp(((t_file *)l)->name, ((t_file *)r)->name);
+#ifdef USE_LOCALES
+		ret = strcoll(fl->name, fr->name);
+#else
+		ret = ft_strcmp(fl->name, fr->name);
+#endif
 	if (config.flags['r'])
 		ret *= -1;
 	return ret < 0 ? -1 : ret > 0 ? 1 : 0;
 }
+
+#ifdef USE_LOCALES
+void __attribute__((constructor)) init_locales(void)
+{
+	char *tmp = ft_getenv("LC_ALL");
+	if (!tmp)
+		tmp = ft_getenv("LC_COLLATE");
+	if (!tmp)
+		tmp = ft_getenv("LANG");
+	if (tmp)
+		setlocale(LC_COLLATE, tmp);
+}
+#endif

@@ -14,6 +14,7 @@ status	get_stat(t_file *current, char *path, bool follow_link)
 		current->stat_error = true;
 		ft_fprintf(ft_stderr, "%s: cannot access '%s': %m\n", config.program_name, path);
 	}
+	current->is_dir = S_ISDIR(current->real_mode);
 	return OK;
 }
 
@@ -59,7 +60,6 @@ status get_dir(container *dirname, dir_stats *dir)
 	}
 	if (config.multiple || config.flags['R'])
 		ft_printf("%s%s:\n", ft_ftell(ft_stdout) > 0 ? "\n" : "", ft_string_c_str(dirname));
-	dir->set.clear(&dir->set);
 	errno = 0;
 	while ((elem = readdir(dirp)))
 	{
@@ -77,13 +77,18 @@ status get_dir(container *dirname, dir_stats *dir)
 //				return KO;
 			}
 		}
-		get_stat(&current, ft_string_c_str(dirname), config.flags['L']);
+		current.is_dir = (elem->d_type == DT_DIR);
+		if (config.gather_stat)
+			get_stat(&current, ft_string_c_str(dirname), config.flags['L']);
+		else
+			current.lstat.st_ino = elem->d_ino;
 		SWITCH_STATUS(init_file(&current, elem->d_name, ft_string_c_str(dirname), dir), , ;, closedir(dirp);return FATAL);
 		path_pop(dirname);
 #ifdef VECTOR_STORAGE
 //		printf("---> %s %zu\n", current.name, current.lstat.st_size);
-		if (ft_bheap_push_ptr(&dir->tmp_set, (data_type*)&current) != OK)
-#elif
+		if ((!config.flags['U'] && ft_bheap_push(&dir->tmp_set, &current) != OK) ||
+			( config.flags['U'] && ft_vector_push_back(&dir->set, &current) != OK))
+#else
 		if (ft_push_back(&dir->set, &current) != OK)
 #endif
 		{
@@ -100,10 +105,9 @@ status get_dir(container *dirname, dir_stats *dir)
 		return OK; // a voir
 	}
 #ifdef VECTOR_STORAGE
-	while (dir->tmp_set.size > 0)
+	while (!config.flags['U'] && dir->tmp_set.size > 0)
 	{
-//		printf("&&&&&& %s\n", ((t_file*)ft_vector_at_ptr(&dir->tmp_set, 0))->name);
-		if (ft_vector_push_back_ptr(&dir->set, ft_vector_at_ptr(&dir->tmp_set, 0)) != OK)
+		if (ft_vector_push_back(&dir->set, ft_vector_at(&dir->tmp_set, 0)) != OK)
 			return FATAL;
 		ft_bheap_pop(&dir->tmp_set);
 	}
