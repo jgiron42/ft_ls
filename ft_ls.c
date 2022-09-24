@@ -92,7 +92,7 @@ status ls_all_dir(container *current_path, container *set, container *vectors, s
 					goto end_dir;
 				}
 			}
-			SWITCH_STATUS(get_dir(current_path, current_dir),, { path_pop(current_path); continue; }, { return FATAL; })
+			SWITCH_STATUS(get_dir(current_path, current_dir),, { path_pop(current_path); ret = KO; continue; }, { return FATAL; })
 			SWITCH_STATUS(ft_ls_dir(current_path, current_dir, vectors, depth),, { ret = KO; }, { return FATAL; })
 			end_dir:
 			if (f->name[0] == '/')

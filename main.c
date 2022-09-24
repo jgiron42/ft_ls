@@ -52,10 +52,12 @@ int main(int argc, char **argv) // -Ri /
 		ft_setvbuf(ft_stderr, NULL, _IOFBF, 10000))
 		goto end;
 
+	ret = OK;
 	// parse command line:
-	if (parse_command(&dirs, &files, argc, argv) != FATAL)
+	SWITCH_STATUS(parse_command(&dirs, &files, argc, argv),,ret = KO, ret = FATAL; goto end;)
 		// launch ls:
-		ret = ls_arguments(&dirs, &files);
+	if (ls_arguments(&dirs, &files) != OK)
+		ret = KO;
 
 	// free and end:
 	end:
