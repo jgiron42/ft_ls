@@ -18,7 +18,7 @@ Each file in a directory is pushed to a binary heap, then the heap is entirely p
 In order to avoid intensive use of malloc, the vector and the heap for each directory depth are stored in a vector and reused. (has shown in the diagram below)
 ![a](https://github.com/jgiron42/ft_ls/blob/78eaa758c2590240b5e0203b7693462fb58b7bde/ft_ls.png)
 
-An other benchmark showed that storing the files structs directly in the vector and heap was slower than storing pointers to files struct (memcpying datas is probably longer than, chunk caching of malloc).
+An other benchmark showed that storing the files structs directly in the vector and heap was slower than storing pointers to files struct (memcpying datas is probably longer than the chunk caching of malloc).
 
 ## data retrieval
 
