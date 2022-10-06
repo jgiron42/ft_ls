@@ -1,4 +1,4 @@
-#include "ft_ls.h"
+#include "../includes/ft_ls.h"
 
 char	*getlink(char *name)
 {
@@ -126,12 +126,8 @@ status	ft_ls_dir(container *current_path, dir_stats *dir, container *vectors, si
 		ft_bheap_pop(&dir->set);
 	}
 #elif defined(VECTOR_STORAGE)
-//printf("cousdcoasudfsdoufsaduofa\n");
 	for_in(it, dir->set)
-	{
-//		printf(">>>> %s\n", ((t_file*)ft_vector_iterator_reference(&it))->name);
 		ft_ls_file(*(t_file*)ft_vector_iterator_dereference(&it), dir, current_path);
-	}
 
 #else
 	for_in(it, dir->set)

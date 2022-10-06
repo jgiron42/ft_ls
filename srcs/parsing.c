@@ -1,4 +1,4 @@
-#include "ft_ls.h"
+#include "../includes/ft_ls.h"
 
 #define OPTIONS "RacdilrtuHgnopsf" //"ULCq1"
 

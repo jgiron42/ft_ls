@@ -1,9 +1,9 @@
 #ifndef FT_LS
 # define FT_LS
-# include "libft/libft.h"
-# include "libft/containers/containers.h"
-# include "libft/algorithms//algorithms.h"
-# include "libft/stdio/printf/printf.h"
+# include "libft.h"
+# include "containers/containers.h"
+# include "algorithms/algorithms.h"
+# include "stdio/printf/printf.h"
 # include <sys/sysmacros.h>
 # include <stdbool.h>
 # include <stdio.h>

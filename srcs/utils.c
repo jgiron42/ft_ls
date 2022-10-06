@@ -1,4 +1,4 @@
-#include "ft_ls.h"
+#include "../includes/ft_ls.h"
 
 int compare_time(struct timespec l, struct timespec r)
 {
@@ -13,7 +13,8 @@ int compare_time(struct timespec l, struct timespec r)
 int id_table_entry_compare(type_metadata prop, void *l, void *r)
 {
 	(void)prop;
-	return ((int)(*(id_table_entry **)l)->id - (int)(*(id_table_entry **)r)->id);
+	return ((int)(*(id_table_entry **)l)->id -
+	(int)(*(id_table_entry **)r)->id);
 }
 
 int	t_file_compare(type_metadata prop, void *l, void *r)

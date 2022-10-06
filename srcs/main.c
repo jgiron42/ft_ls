@@ -1,4 +1,4 @@
-#include "ft_ls.h"
+#include "../includes/ft_ls.h"
 #include <locale.h>
 
 t_config config = {};
@@ -36,7 +36,7 @@ status	ls_arguments(container *dirs, dir_stats *files)
 	return ret;
 }
 
-int main(int argc, char **argv) // -Ri /
+int main(int argc, char **argv) // -Ril
 {
 	dir_stats	files = DEFAULT_DIR;
 	container 	dirs = {};

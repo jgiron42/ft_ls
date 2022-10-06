@@ -1,4 +1,4 @@
-#include "ft_ls.h"
+#include "../includes/ft_ls.h"
 
 status	get_size(t_file *current, dir_stats *dir)
 {
